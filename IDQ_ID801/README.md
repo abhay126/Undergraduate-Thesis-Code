@@ -1,6 +1,6 @@
 # hunahpy
-### Python 3.6 (32 bits only)
-ctypes based library for the IDQuantique id800 time-to-digital converter (TDC)
+### Python 3.11 (64 bits only)
+ctypes based library for the IDQuantique id801 time-to-digital converter (TDC)
 
 Shared libraries you need:
 
@@ -8,7 +8,7 @@ Shared libraries you need:
 * nhconnect.lib
 * tdcbase.dll
 * tdcbase.lib
-* libusb0.dll (32 bit)
+* libusb0.dll (64 bit)
 
 ## hunahpy package:
 `hunahpy` contains one object only: `TDC`
