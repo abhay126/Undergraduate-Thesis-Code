@@ -1,4 +1,9 @@
 # hunahpy
+
+Originally from: https://github.com/luyves/time-tagger
+
+The above mentioned github code was slightly modified to work with 64-bit Windows systems.
+
 ### Python 3.11 (64 bits only)
 ctypes based library for the IDQuantique id801 time-to-digital converter (TDC)
 
