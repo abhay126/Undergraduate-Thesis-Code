@@ -14,13 +14,12 @@ from MMC_driver import *
 import serial
 
 # For interacting with Time-to-Digital Converter IDQ801
-import IDQ_ID800.lib.hunahpy as IDQ
+import IDQ_ID801.lib.hunahpy as IDQ
 
 # Macros
-starting_wl = 760
-ending_wl   = 860
-move_1nm    = -0.031056
-encod_move_1nm     = 2 * move_1nm
+START_WL    = 760
+END_WL      = 860
+ZERO_POS_WL = 800
 
 
 def get_sample(filename : str) -> tuple[pd.DataFrame, float]:
@@ -57,12 +56,11 @@ def get_sample(filename : str) -> tuple[pd.DataFrame, float]:
     
     return (None, None)
 
-
 if __name__=="__main__":
 
-    # Get centre wavelength for the filter (as it is shitty and changes regularly)
-    zero_centre_wl = input(">>>Enter the centre wavelength in nm after checking the tunable filter for correct calibration: ")
-    zero_centre_wl = float(zero_centre_wl)
+    # # Get centre wavelength for the filter (as it is shitty and changes regularly)
+    # zero_centre_wl = input(">>>Enter the centre wavelength in nm after checking the tunable filter for correct calibration: ")
+    # zero_centre_wl = float(zero_centre_wl)
 
     # Setting up tunable filter connections
     ports = serial.tools.list_ports.comports()
@@ -89,15 +87,15 @@ if __name__=="__main__":
     idq = IDQ.TDC()
 
     # Setting up general variables to be used based on macros and input
-    starting_wl     = zero_centre_wl
-    spectrum_range  = int(ending_wl - starting_wl)
+    # starting_wl     = zero_centre_wl
+    spectrum_range  = int(END_WL - START_WL)
 
-    #TODO move to starting position for the tunable filter
-    # Move to starting wluency position
-    start_pos = zero_centre_wl - starting_wl
+    # Move to starting position for the tunable filter
+    move_MMC(target_wl= START_WL)
+    time.sleep(5)
 
-    # Making sure we are starting from 0 position
-    writeCommandToMMC(1, 'zro')
+    # # Making sure we are starting from 0 position
+    # writeCommandToMMC(1, 'zro')
 
     ## Basic testing and debugging comments
     # time.sleep(10)
@@ -121,9 +119,9 @@ if __name__=="__main__":
 
         print("======STEP {}======".format(i))
 
-        expected_wl = str(starting_wl + i)
+        expected_wl = str(START_WL + i)
         theoretical_pos, encoder_pos = query_position()
-        time.sleep(1)
+        time.sleep(3)
 
         # Collect timestamps from the TDC
         counts = 0
@@ -139,7 +137,7 @@ if __name__=="__main__":
             row = {'Expected Wavelength' : expected_wl,
                    'Theoretical Position' : theoretical_pos,
                    'Enocder Position' : encoder_pos,
-                   'Calculated Wavelength' : zero_centre_wl + encoder_pos/encod_move_1nm, 
+                   'Calculated Wavelength' : get_current_wl(encoder_pos= encoder_pos), 
                    'Event Counts' : counts,
                    'Time' : period,
                    'Count Rate' : counts / period
@@ -147,9 +145,11 @@ if __name__=="__main__":
             print(row)
             count_df[i] = row
         
-        writeCommandToMMC(1, 'mvr' + "{:.4f}".format(move_1nm))
+        # Move to the next position
+        next_wl = float(expected_wl) + 1
+        move_MMC(target_wl= next_wl)
         # move_pos(zero_wl= zero_centre_wl, target_wl= float(expected_wl) + 1)
-        time.sleep(5)
+        time.sleep(3)
 
     count_df = count_df.transpose()
     count_df.to_csv('data.csv')

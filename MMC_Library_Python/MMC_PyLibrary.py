@@ -66,6 +66,7 @@ def closeConnectionMMC():
 
 def pollValues(axis, command):
     global scon, econ
+    ser.reset_input_buffer()
     sendCommand = str(axis) + command + "?"
     if scon == 'Serial':
         sendCommand = str(sendCommand) + "\r"

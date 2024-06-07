@@ -1,5 +1,6 @@
 from MMC_Library_Python.MMC_PyLibrary import *
 import time
+import math
 
 #TODO can add argparse so that is accessible from command line
 #TODO can write a small help script to give information about common commands one may use
@@ -11,9 +12,10 @@ CMD_MOVE_RELATIVE   = "MVR"
 CMD_MOVE_ABSOLUTE   = "MVA"
 CMD_STATUS_MSG      = "STA"
 
-# Global values
-theory_move_1nm    = -0.031056
-encod_move_1nm     = 2 * theory_move_1nm
+# Tunable Filter Quadratic Approximation
+quadratic_coeff = -0.1974
+linear_coeff    = -16.491
+intercept       = 799.92
 
 def query_position(axis : int = 1) -> tuple[float]:
     """
@@ -42,15 +44,14 @@ def query_position(axis : int = 1) -> tuple[float]:
     
     return (None, None)
 
-def move_pos(zero_wl : float, target_wl : float, axis : int = 1) -> None:
+def move_MMC(target_wl : float, axis : int = 1) -> None:
     """
-    (float, float, int) -> (None)
+    (float, int) -> (None)
 
     Move the motor such that the centre wavelength is changed from what it is currently at 
     to target centre wavelength, given the centre wavelength at zero position.
 
     @inputs
-    zero_wl (float): Centre wavelength at zero position of the motor
     target_wl (float): Target centre wavelength needed from the tunable filter
     axis (int) (optional): Integer value specifying the axis of rotation set for that motor,
                             default value is 1
@@ -60,49 +61,38 @@ def move_pos(zero_wl : float, target_wl : float, axis : int = 1) -> None:
                     index 1 represents encoder position. Returns None for both if the call failed
     """
 
-    # Get current positions 
-    curr_theory_pos, curr_encod_pos = query_position(axis= axis)
-    if curr_theory_pos == None or curr_encod_pos == None:
-        # TODO maybe a kill properly function
-        print("ERROR")
-        exit()
+    # Set up the quadratic equation
+    a = quadratic_coeff
+    b = linear_coeff
+    c = intercept - target_wl
+
+    # Get solution of the quadratic equation
+    target_pos = (-b - math.sqrt(b**2 - 4*a*c)) / (2*a)
+    target_pos = float("{:0.6f}".format(target_pos))
     
-    time.sleep(3)
+    # Send command
+    writeCommandToMMC(axis= axis, command= CMD_MOVE_ABSOLUTE + str(target_pos))
 
 
-    curr_wl = zero_wl + curr_encod_pos/encod_move_1nm
+def get_current_wl(encoder_pos : float) -> float:
+    """
+    (float) -> (float)
 
-    wl_shift = target_wl - curr_wl
+    Get the centre wavelength currently on the tunable filter given its encoder position.
+    Assuming the quadratic equation coefficients are still valid.
 
-    goal_theory_pos = float("{:0.6f}".format(wl_shift * theory_move_1nm)) 
-    goal_encod_pos = float("{:0.6f}".format(wl_shift * encod_move_1nm))
-    error = goal_encod_pos - curr_encod_pos
+    @inputs
+    encoder_pos (float): Current encoder position of the motor
 
-    if target_wl != zero_wl:
-        cmd = CMD_MOVE_RELATIVE
-    
-    else:
-        cmd = CMD_MOVE_ABSOLUTE
+    @return
+    float: Current centre wavelength of the tunable filter
+    """
 
-    
+    # Using the quadratic equation to find the current centre wavelength
+    current_wl = quadratic_coeff * encoder_pos ** 2 + linear_coeff * encoder_pos + intercept
+    current_wl = float("{:0.2f}".format(current_wl))
 
-    while abs(error) > 0.001:
-        curr_theory_pos, curr_encod_pos = query_position(axis= axis)
-        if curr_theory_pos == None or curr_encod_pos == None:
-            # TODO maybe a kill properly function
-            print("ERROR")
-            exit()
-        
-        time.sleep(3)
-        print(curr_encod_pos)
-        curr_wl = zero_wl + curr_encod_pos/encod_move_1nm
-        wl_shift = target_wl - curr_wl
-        print(curr_wl, target_wl)
-        print(wl_shift)
-        goal_theory_pos = float("{:0.6f}".format(wl_shift * theory_move_1nm))
-        print(goal_theory_pos)
-        error = goal_encod_pos - curr_encod_pos
-
+    return current_wl 
 
 def get_status(message : str) -> None:
     """
@@ -174,6 +164,7 @@ if __name__=="__main__":
             else:
 
                 writeCommandToMMC(1, user_input)
+                # move_MMC(float(user_input))
 
 
             if not closeConnectionMMC():
