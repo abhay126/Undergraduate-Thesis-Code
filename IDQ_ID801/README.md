@@ -1,6 +1,11 @@
 # hunahpy
-### Python 3.6 (32 bits only)
-ctypes based library for the IDQuantique id800 time-to-digital converter (TDC)
+
+Originally from: https://github.com/luyves/time-tagger
+
+The above mentioned github code was slightly modified to work with 64-bit Windows systems.
+
+### Python 3.11 (64 bits only)
+ctypes based library for the IDQuantique id801 time-to-digital converter (TDC)
 
 Shared libraries you need:
 
@@ -8,7 +13,7 @@ Shared libraries you need:
 * nhconnect.lib
 * tdcbase.dll
 * tdcbase.lib
-* libusb0.dll (32 bit)
+* libusb0.dll (64 bit)
 
 ## hunahpy package:
 `hunahpy` contains one object only: `TDC`
