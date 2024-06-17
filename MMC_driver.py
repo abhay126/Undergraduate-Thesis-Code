@@ -13,9 +13,9 @@ CMD_MOVE_ABSOLUTE   = "MVA"
 CMD_STATUS_MSG      = "STA"
 
 # Tunable Filter Quadratic Approximation
-quadratic_coeff = -0.1974
-linear_coeff    = -16.491
-intercept       = 799.92
+quadratic_coeff = -0.1874
+linear_coeff    = -16.456
+intercept       = 800
 
 def query_position(axis : int = 1) -> tuple[float]:
     """
@@ -163,8 +163,8 @@ if __name__=="__main__":
 
             else:
 
-                writeCommandToMMC(1, user_input)
-                # move_MMC(float(user_input))
+                # writeCommandToMMC(1, user_input)
+                move_MMC(float(user_input))
 
 
             if not closeConnectionMMC():
